@@ -3,7 +3,239 @@
 <head>
 <meta charset="UTF-8">
 <title>Stopwatch</title>
-<link rel="stylesheet" href="style.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg-deep:#150a35;
+    --bg-mid:#241257;
+    --blue:#3f7de0;
+    --blue-glow:#5f9bff;
+    --cream:#f4f1ea;
+    --lavender:#a99fd1;
+    --lavender-dim:#7a6fa8;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{
+    height:100%;
+    background:
+      radial-gradient(circle at 20% 15%, #2a1768 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, #1c0f4a 0%, transparent 50%),
+      linear-gradient(160deg, var(--bg-deep) 0%, var(--bg-mid) 100%);
+    font-family:'Inter', sans-serif;
+    color:var(--cream);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+
+  .stage{
+    width:100%;
+    max-width:920px;
+    padding:48px 32px;
+    display:grid;
+    grid-template-columns:1fr;
+    gap:36px;
+    justify-items:center;
+  }
+
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    color:var(--lavender-dim);
+    font-size:13px;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  .eyebrow::before{
+    content:'';
+    width:36px;
+    height:2px;
+    background:linear-gradient(90deg, var(--blue), transparent);
+  }
+  .eyebrow::after{
+    content:'';
+    width:36px;
+    height:2px;
+    background:linear-gradient(90deg, transparent, var(--blue));
+  }
+
+  .dial-wrap{
+    position:relative;
+    width:min(420px, 78vw);
+    aspect-ratio:1/1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  svg.ring{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:rotate(-90deg);
+  }
+  .ring-track{
+    fill:none;
+    stroke:rgba(255,255,255,0.06);
+    stroke-width:3;
+  }
+  .ring-progress{
+    fill:none;
+    stroke:url(#ringGrad);
+    stroke-width:3;
+    stroke-linecap:round;
+    transition:stroke-dashoffset 0.1s linear;
+    filter:drop-shadow(0 0 6px rgba(95,155,255,0.55));
+  }
+  .ring-lap-progress{
+    fill:none;
+    stroke:rgba(169,159,209,0.55);
+    stroke-width:1.5;
+    stroke-linecap:round;
+    transition:stroke-dashoffset 0.1s linear;
+  }
+
+  .face{
+    position:relative;
+    width:82%;
+    height:82%;
+    border-radius:50%;
+    background:linear-gradient(155deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+    border:1px solid rgba(255,255,255,0.08);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    backdrop-filter:blur(2px);
+  }
+
+  .time{
+    font-family:'Playfair Display', serif;
+    font-weight:700;
+    font-size:clamp(2.6rem, 8vw, 3.6rem);
+    letter-spacing:0.01em;
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+  }
+  .time .ms{
+    font-size:0.42em;
+    color:var(--lavender);
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    margin-left:4px;
+  }
+  .status-label{
+    margin-top:14px;
+    font-size:11px;
+    letter-spacing:0.24em;
+    text-transform:uppercase;
+    color:var(--lavender-dim);
+    font-weight:600;
+  }
+  .status-label.running{ color:var(--blue-glow); }
+  .status-label.running::before{
+    content:'● ';
+  }
+
+  .controls{
+    display:flex;
+    gap:18px;
+    align-items:center;
+  }
+
+  button{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:0.03em;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,0.14);
+    padding:14px 30px;
+    cursor:pointer;
+    background:rgba(255,255,255,0.04);
+    color:var(--cream);
+    transition:transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  button:hover{ transform:translateY(-1px); border-color:rgba(255,255,255,0.28); }
+  button:active{ transform:translateY(0); }
+  button:focus-visible{
+    outline:2px solid var(--blue-glow);
+    outline-offset:3px;
+  }
+
+  #startPause{
+    background:linear-gradient(135deg, var(--blue), #2f5fc4);
+    border-color:transparent;
+    box-shadow:0 8px 24px -8px rgba(63,125,224,0.7);
+    min-width:132px;
+  }
+  #startPause.pause-state{
+    background:linear-gradient(135deg, #e0a83f, #c47a2f);
+    box-shadow:0 8px 24px -8px rgba(224,168,63,0.6);
+  }
+
+  #lap{ opacity:0.85; }
+  #lap:disabled, #reset:disabled{
+    opacity:0.3;
+    cursor:not-allowed;
+    transform:none;
+  }
+
+  .laps-panel{
+    width:100%;
+    max-width:420px;
+    max-height:200px;
+    overflow-y:auto;
+    border-top:1px solid rgba(255,255,255,0.09);
+    padding-top:14px;
+  }
+  .laps-panel::-webkit-scrollbar{ width:6px; }
+  .laps-panel::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.12); border-radius:4px; }
+
+  .lap-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:9px 4px;
+    font-size:14px;
+    font-variant-numeric:tabular-nums;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    animation:slideIn 0.25s ease;
+  }
+  .lap-row:last-child{ border-bottom:none; }
+  .lap-index{
+    color:var(--lavender-dim);
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:0.1em;
+    width:52px;
+  }
+  .lap-time{ color:var(--cream); font-weight:500; }
+  .lap-delta{ color:var(--lavender); font-size:12px; }
+
+  .laps-empty{
+    text-align:center;
+    color:var(--lavender-dim);
+    font-size:13px;
+    padding:12px 0;
+  }
+
+  @keyframes slideIn{
+    from{ opacity:0; transform:translateY(-6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation:none !important; transition:none !important; }
+  }
+</style>
 </head>
 <body>
 
@@ -39,6 +271,155 @@
   </div>
 </div>
 
-<script src="script.js"></script>
+<script>
+(function(){
+  const timeDisplay = document.getElementById('timeDisplay');
+  const statusLabel = document.getElementById('statusLabel');
+  const startPauseBtn = document.getElementById('startPause');
+  const resetBtn = document.getElementById('reset');
+  const lapBtn = document.getElementById('lap');
+  const lapsPanel = document.getElementById('lapsPanel');
+  const lapsEmpty = document.getElementById('lapsEmpty');
+  const ringProgress = document.getElementById('ringProgress');
+  const ringLap = document.getElementById('ringLap');
+
+  const R_MAIN = 92, R_LAP = 84;
+  const CIRC_MAIN = 2 * Math.PI * R_MAIN;
+  const CIRC_LAP = 2 * Math.PI * R_LAP;
+  ringProgress.style.strokeDasharray = CIRC_MAIN;
+  ringLap.style.strokeDasharray = CIRC_LAP;
+  ringProgress.style.strokeDashoffset = CIRC_MAIN;
+  ringLap.style.strokeDashoffset = CIRC_LAP;
+
+  let running = false;
+  let startTime = 0;
+  let elapsed = 0;      // ms elapsed before current run segment
+  let rafId = null;
+  let laps = [];
+  let lastLapElapsed = 0;
+
+  function formatTime(ms){
+    const totalCentis = Math.floor(ms / 10);
+    const centis = totalCentis % 100;
+    const totalSeconds = Math.floor(ms / 1000);
+    const seconds = totalSeconds % 60;
+    const minutes = Math.floor(totalSeconds / 60) % 60;
+    const hours = Math.floor(totalSeconds / 3600);
+    const pad = (n, l=2) => String(n).padStart(l, '0');
+    let main;
+    if (hours > 0){
+      main = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    } else {
+      main = `${pad(minutes)}:${pad(seconds)}`;
+    }
+    return { main, centis: pad(centis) };
+  }
+
+  function render(currentElapsed){
+    const { main, centis } = formatTime(currentElapsed);
+    timeDisplay.innerHTML = `${main}<span class="ms">.${centis}</span>`;
+
+    // main ring: fills every 60s
+    const secondFrac = (currentElapsed % 60000) / 60000;
+    ringProgress.style.strokeDashoffset = CIRC_MAIN * (1 - secondFrac);
+
+    // lap ring: fills since last lap, over a 30s cycle for visual interest
+    const sinceLap = currentElapsed - lastLapElapsed;
+    const lapFrac = (sinceLap % 30000) / 30000;
+    ringLap.style.strokeDashoffset = CIRC_LAP * (1 - lapFrac);
+  }
+
+  function tick(){
+    const now = performance.now();
+    const currentElapsed = elapsed + (now - startTime);
+    render(currentElapsed);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function start(){
+    running = true;
+    startTime = performance.now();
+    rafId = requestAnimationFrame(tick);
+    startPauseBtn.textContent = 'Pause';
+    startPauseBtn.classList.add('pause-state');
+    statusLabel.textContent = 'Running';
+    statusLabel.classList.add('running');
+    resetBtn.disabled = true;
+    lapBtn.disabled = false;
+  }
+
+  function pause(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    elapsed += performance.now() - startTime;
+    startPauseBtn.textContent = 'Start';
+    startPauseBtn.classList.remove('pause-state');
+    statusLabel.textContent = 'Paused';
+    statusLabel.classList.remove('running');
+    resetBtn.disabled = false;
+    lapBtn.disabled = true;
+  }
+
+  function reset(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    elapsed = 0;
+    lastLapElapsed = 0;
+    laps = [];
+    render(0);
+    startPauseBtn.textContent = 'Start';
+    startPauseBtn.classList.remove('pause-state');
+    statusLabel.textContent = 'Ready';
+    statusLabel.classList.remove('running');
+    resetBtn.disabled = true;
+    lapBtn.disabled = true;
+    lapsPanel.innerHTML = '';
+    lapsPanel.appendChild(lapsEmpty);
+  }
+
+  function recordLap(){
+    const now = performance.now();
+    const currentElapsed = elapsed + (running ? (now - startTime) : 0);
+    const delta = currentElapsed - lastLapElapsed;
+    lastLapElapsed = currentElapsed;
+    laps.push(currentElapsed);
+
+    if (lapsEmpty.parentNode === lapsPanel){
+      lapsPanel.removeChild(lapsEmpty);
+    }
+
+    const row = document.createElement('div');
+    row.className = 'lap-row';
+    const { main, centis } = formatTime(currentElapsed);
+    const deltaFmt = formatTime(delta);
+    row.innerHTML = `
+      <span class="lap-index">LAP ${String(laps.length).padStart(2,'0')}</span>
+      <span class="lap-time">${main}.${centis}</span>
+      <span class="lap-delta">+${deltaFmt.main}.${deltaFmt.centis}</span>
+    `;
+    lapsPanel.prepend(row);
+  }
+
+  startPauseBtn.addEventListener('click', () => {
+    if (running) pause(); else start();
+  });
+  resetBtn.addEventListener('click', reset);
+  lapBtn.addEventListener('click', recordLap);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space'){
+      e.preventDefault();
+      if (running) pause(); else start();
+    } else if (e.code === 'KeyL' && !lapBtn.disabled){
+      recordLap();
+    } else if (e.code === 'KeyR' && !resetBtn.disabled){
+      reset();
+    }
+  });
+
+  render(0);
+})();
+</script>
+
 </body>
 </html>
