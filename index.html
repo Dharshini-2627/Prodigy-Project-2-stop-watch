@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Stopwatch</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="stage">
+  <div class="eyebrow">Task&#8209;02 &middot; Stopwatch</div>
+
+  <div class="dial-wrap">
+    <svg class="ring" viewBox="0 0 200 200">
+      <defs>
+        <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#5f9bff"/>
+          <stop offset="100%" stop-color="#3f7de0"/>
+        </linearGradient>
+      </defs>
+      <circle class="ring-track" cx="100" cy="100" r="92"></circle>
+      <circle class="ring-lap-progress" id="ringLap" cx="100" cy="100" r="84"></circle>
+      <circle class="ring-progress" id="ringProgress" cx="100" cy="100" r="92"></circle>
+    </svg>
+    <div class="face">
+      <div class="time" id="timeDisplay">00:00<span class="ms">.00</span></div>
+      <div class="status-label" id="statusLabel">Ready</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="reset" disabled>Reset</button>
+    <button id="startPause">Start</button>
+    <button id="lap" disabled>Lap</button>
+  </div>
+
+  <div class="laps-panel" id="lapsPanel">
+    <div class="laps-empty" id="lapsEmpty">Laps you record will appear here</div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
